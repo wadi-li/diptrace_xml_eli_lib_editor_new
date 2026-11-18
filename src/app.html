@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор баз DipTrace XML</title>
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--panel2:#f8f9fb;--text:#1d2330;--muted:#687083;--line:#dde1e8;--line2:#c9ced8;--acc:#1f6feb;--acc-t:#fff;--acc-soft:#e3edfd;--chg:#fff4c2;--new:#e3f6e8;--del:#fde4e4;--ro:#f1f2f5;--abs:repeating-linear-gradient(135deg,transparent 0 5px,#eceef2 5px 6px);--sel:#d7e5fb;--lnk:#0b57d0;--err:#c62828;--warn:#9a6700;--ok:#1b7f3b;--hdr:#eef1f5;--shadow:0 8px 28px rgba(20,30,50,.18)}
+[data-theme=dark]{--bg:#15181e;--panel:#1d2129;--panel2:#232833;--text:#e3e6ec;--muted:#98a0b0;--line:#2f3542;--line2:#3b4252;--acc:#4c8dff;--acc-t:#0b0f16;--acc-soft:#1f2c44;--chg:#4a4117;--new:#173a24;--del:#4a1f22;--ro:#20242c;--abs:repeating-linear-gradient(135deg,transparent 0 5px,#262b35 5px 6px);--sel:#23385c;--lnk:#7fb0ff;--err:#ff7b7b;--warn:#e5b64a;--ok:#5fd18a;--hdr:#232833;--shadow:0 8px 28px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--panel);border:1px solid var(--line2);border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);color:var(--acc-t);border-color:var(--acc)}
+button.small{padding:2px 7px;font-size:12px}
+button:disabled{opacity:.45;cursor:default}
+input:not([type]),input[type=text],input[type=number],input[type=search],select,textarea{background:var(--panel);border:1px solid var(--line2);border-radius:5px;padding:4px 6px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px}
+.app{display:grid;grid-template-rows:auto auto 1fr auto;height:100vh}
+header{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:15px;margin:0 8px 0 0;font-weight:650;display:flex;align-items:center;gap:8px}
+header .sep{width:1px;height:22px;background:var(--line)}
+.grow{flex:1}
+#libSel{max-width:330px}
+.views{display:flex;gap:0;background:var(--panel2);border-bottom:1px solid var(--line);padding:0 10px;align-items:center}
+.views button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:7px 12px;color:var(--muted)}
+.views button.on{color:var(--text);border-bottom-color:var(--acc);font-weight:600}
+.views .badge{display:inline-block;min-width:16px;padding:0 4px;border-radius:8px;background:var(--err);color:#fff;font-size:11px;margin-left:4px}
+.views .badge.w{background:var(--warn)}
+.view{display:none;min-height:0}
+.view.on{display:grid}
+#v-ed{grid-template-rows:auto 1fr}
+.tb{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--panel2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tb label{display:flex;align-items:center;gap:4px;color:var(--muted)}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{border:1px solid var(--line2);border-radius:14px;padding:2px 9px;cursor:pointer;user-select:none;background:var(--panel)}
+.chip .gb{margin-right:5px}
+.chip.on{background:var(--acc-soft);border-color:var(--acc)}
+main{display:grid;grid-template-columns:1fr 6px var(--side,460px);min-height:0}
+.gridwrap{position:relative;overflow:auto;min-height:0;background:var(--panel);outline:none}
+.split{cursor:col-resize;background:var(--line)}
+.split:hover{background:var(--acc)}
+aside{background:var(--panel);min-height:0;display:flex;flex-direction:column;border-left:1px solid var(--line)}
+.tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto;flex:none}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 9px;color:var(--muted)}
+.tabs button.on{color:var(--text);border-bottom-color:var(--acc);font-weight:600}
+.pane{padding:10px 12px;overflow:auto;flex:1;display:none}
+.pane.on{display:block}
+footer{display:flex;gap:14px;padding:4px 12px;border-top:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:12px;flex-wrap:wrap}
+table.g{border-collapse:separate;border-spacing:0;table-layout:fixed}
+table.g th,table.g td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0 6px;height:27px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0}
+table.g thead th{position:sticky;top:0;background:var(--hdr);z-index:3;font-weight:600;text-align:left;user-select:none}
+table.g thead tr.flt th{top:27px;padding:2px 3px}
+table.g thead tr.flt input{width:100%;padding:1px 4px;font-size:12px;border-radius:3px;font-weight:400}
+table.g th .rs{position:absolute;right:-3px;top:0;width:7px;height:100%;cursor:col-resize;z-index:2}
+.gb{font-size:10px;padding:0 4px;border-radius:3px;margin-right:4px;font-weight:600}
+.gb.svc{background:#dbe7ff;color:#1b3f8a}.gb.sup{background:#ffe7c7;color:#7a4300}.gb.pat{background:#dff3e1;color:#1c5a2b}.gb.m3{background:#d9f1f4;color:#0d5560}.gb.uf{background:#efe0ff;color:#5b2a8c}.gb.puf{background:#ffe0ef;color:#8a1e52}
+[data-theme=dark] .gb{filter:brightness(.8) saturate(1.3)}
+table.g th.sort-asc::after{content:" ▲";color:var(--acc)}table.g th.sort-desc::after{content:" ▼";color:var(--acc)}
+table.g td{cursor:cell}
+table.g .stk{position:sticky;z-index:1;background:var(--panel)}
+table.g thead .stk{z-index:4;background:var(--hdr)}
+td.ro{background:var(--ro);color:var(--muted)}
+td.abs{background:var(--abs)}
+td.chg{background:var(--chg)}
+td.lnk{color:var(--lnk);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--lnk) 40%,transparent)}
+td.st-ok{color:var(--ok)}td.st-miss{color:var(--err);font-weight:600}td.st-unk{color:var(--warn)}
+tr.new td.stk.idc{box-shadow:inset 3px 0 0 var(--ok)}
+tr.new td.idc{color:var(--ok)}
+tr.del td{text-decoration:line-through;color:var(--muted);background:var(--del)}
+tr.cur td.stk{background:var(--acc-soft)}
+td.insel{background:var(--sel)!important}
+td.act{outline:2px solid var(--acc);outline-offset:-2px}
+td.cb,th.cb{text-align:center;padding:0}
+.editor{position:absolute;z-index:10;resize:none;border:2px solid var(--acc);border-radius:0;padding:3px 5px;line-height:18px;box-shadow:var(--shadow);background:var(--panel);overflow:hidden}
+.empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);flex-direction:column;gap:12px;text-align:center;padding:30px}
+.empty .drop{border:2px dashed var(--line2);border-radius:12px;padding:30px 50px;max-width:720px}
+.empty b{color:var(--text)}
+.f{display:grid;grid-template-columns:150px 1fr;gap:5px 8px;align-items:center;margin-bottom:10px}
+.f label{color:var(--muted);font-size:12px}
+.f .v{color:var(--muted);font-size:12px;word-break:break-word}
+.f input,.f select,.f textarea{width:100%}
+h3{font-size:13px;margin:14px 0 6px;display:flex;align-items:center;gap:6px}
+h3:first-child{margin-top:0}
+.muted{color:var(--muted)}
+.ok{color:var(--ok)}.err{color:var(--err)}.warn{color:var(--warn)}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.ufl{display:flex;flex-direction:column;gap:3px}
+.ufr{display:grid;grid-template-columns:minmax(80px,1fr) 1.6fr 64px auto;gap:3px;align-items:center}
+.ufr input,.ufr select{width:100%;padding:2px 4px;font-size:12px}
+.ufr .b{display:flex;gap:1px}
+.ufr .b button{padding:0 5px;font-size:11px;border-radius:3px}
+.ufr.chg input{background:var(--chg)}
+.tpl .ufr{grid-template-columns:minmax(80px,1fr) 60px 1.2fr 58px auto}
+.box{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;background:var(--panel2)}
+.msg{padding:3px 0;border-bottom:1px solid var(--line);cursor:pointer;font-size:12px}
+.msg:hover{background:var(--acc-soft)}
+.msg .l{display:inline-block;width:52px;font-weight:600}
+.l.err{color:var(--err)}.l.warn{color:var(--warn)}.l.info{color:var(--muted)}
+.modal-bg{position:fixed;inset:0;background:rgba(10,15,25,.45);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--panel);border-radius:10px;box-shadow:var(--shadow);width:min(820px,95vw);max-height:90vh;display:flex;flex-direction:column}
+.modal.wide{width:min(1100px,96vw)}
+.modal .mh{padding:12px 16px;border-bottom:1px solid var(--line);font-weight:650;display:flex;justify-content:space-between;align-items:center}
+.modal .mb{padding:12px 16px;overflow:auto}
+.modal .mf{padding:10px 16px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+code{background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:0 3px;font-size:12px}
+.toast{position:fixed;bottom:34px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:8px;z-index:200;box-shadow:var(--shadow);max-width:80vw}
+.colchooser{max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+.colchooser label{display:flex;gap:6px;align-items:center;padding:1px 0}
+.kbd{border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;padding:0 4px;font-size:11px}
+details summary{cursor:pointer;color:var(--muted)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+table.t{border-collapse:collapse;width:100%;font-size:12px}
+table.t th,table.t td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+table.t th{background:var(--hdr);position:sticky;top:0;z-index:1;font-weight:600}
+table.t tr:hover td{background:var(--acc-soft)}
+table.t td.nw{white-space:nowrap}
+.banner{padding:8px 12px;background:var(--chg);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#v-x{grid-template-columns:330px 1fr;min-height:0}
+#v-x .left{border-right:1px solid var(--line);background:var(--panel);overflow:auto;padding:10px 12px}
+#v-x .right{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+#v-x .right .tb{flex:none}
+#xBody{overflow:auto;flex:1;min-height:0}
+.plist .it{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;padding:3px 0;border-bottom:1px solid var(--line);font-size:12px}
+.plist .it .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{font-size:10px;border-radius:3px;padding:0 4px;font-weight:600;background:var(--hdr)}
+.tag.sch{background:#e0ecff;color:#1b3f8a}.tag.pcb{background:#dff3e1;color:#1c5a2b}.tag.e{background:#efe0ff;color:#5b2a8c}.tag.l{background:#ffe7c7;color:#7a4300}
+#v-3d{grid-template-columns:1fr 6px 380px;min-height:0}
+#v-3d .cvw{position:relative;min-height:0;background:var(--panel2)}
+#cv3d{width:100%;height:100%;display:block;touch-action:none}
+.cvbar{position:absolute;left:8px;top:8px;display:flex;gap:4px;flex-wrap:wrap}
+.cvbar button{background:color-mix(in srgb,var(--panel) 90%,transparent)}
+.cvinfo{position:absolute;left:10px;bottom:8px;font-size:12px;color:var(--muted);background:color-mix(in srgb,var(--panel) 80%,transparent);padding:3px 7px;border-radius:5px;max-width:90%}
+#v-3d .side3{overflow:auto;padding:10px 12px;background:var(--panel);border-left:1px solid var(--line)}
+.mlist{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.mlist div{padding:3px 6px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mlist div:hover{background:var(--acc-soft)}
+.mlist div.on{background:var(--sel)}
+.xyz{display:grid;grid-template-columns:70px repeat(3,1fr);gap:4px;align-items:center;margin:3px 0}
+.xyz input{width:100%;padding:2px 4px}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Логотип"><rect x="6" y="6" width="12" height="12" rx="1.5"/><path d="M9 2v4M12 2v4M15 2v4M9 18v4M12 18v4M15 18v4M2 9h4M2 12h4M2 15h4M18 9h4M18 12h4M18 15h4"/></svg>Редактор баз DipTrace XML</h1>
+  <button id="bDirs" title="Подключить папки библиотек и 3D-моделей, переменные путей">Папки…</button>
+  <select id="libSel" title="Загруженные библиотеки (.elixml, .libxml)"><option value="">— нет библиотек —</option></select>
+  <button id="bOpen" title="Открыть отдельный файл .elixml / .libxml">Открыть…</button>
+  <span class="sep"></span>
+  <button id="bXlsx" disabled title="Выгрузить таблицу для правки в Excel / LibreOffice">XLSX</button>
+  <button id="bCsv" disabled title="CSV: разделитель ;, UTF-8 с BOM">CSV</button>
+  <button id="bImp" disabled title="Загрузить изменённую таблицу XLSX или CSV">Импорт</button>
+  <span class="sep"></span>
+  <button id="bUndo" disabled title="Отменить (Ctrl+Z)">↶</button>
+  <button id="bRedo" disabled title="Повторить (Ctrl+Y)">↷</button>
+  <span class="sep"></span>
+  <button class="pri" id="bSave" disabled title="Сохранить текущую библиотеку на место (копия исходной — в _backup) (Ctrl+S)">Сохранить</button>
+  <button id="bSaveAll" disabled title="Сохранить все изменённые библиотеки и проекты">Сохранить всё</button>
+  <button id="bSaveAs" disabled title="Сохранить копию под другим именем">Сохранить как…</button>
+  <span class="grow"></span>
+  <button id="bHelp">Справка</button>
+  <button id="bTheme" title="Светлая / тёмная тема">◐</button>
+  <input type="file" id="fLib" accept=".elixml,.libxml,.xml" multiple hidden>
+  <input type="file" id="fPrj" accept=".dchxml,.dipxml" multiple hidden>
+  <input type="file" id="fTab" accept=".xlsx,.csv,.txt" hidden>
+  <input type="file" id="fJson" accept=".json" hidden>
+  <input type="file" id="fStep" accept=".step,.stp" hidden>
+  <input type="file" id="fDirRO" webkitdirectory hidden>
+</header>
+<div class="views" id="views">
+  <button data-v="ed" class="on">Редактор</button><button data-v="x">Кросс-проверка<span id="xBadge"></span></button><button data-v="3d">3D-просмотр</button>
+  <span class="grow"></span><span class="muted" id="rootsInfo"></span>
+</div>
+<div id="banner" hidden></div>
+<div class="view on" id="v-ed">
+  <div class="tb" id="tb" hidden>
+    <input type="search" id="search" placeholder="Поиск по видимым столбцам (Ctrl+F)" style="width:260px">
+    <label>строки <select id="stFilter"><option value="all">все</option><option value="chg">изменённые</option><option value="new">новые</option><option value="del">удалённые</option><option value="chk">отмеченные</option><option value="m3bad">3D: нет файла</option><option value="m3none">3D: не задана</option></select></label>
+    <div class="chips" id="grpChips"></div>
+    <button class="small" id="bCols">Столбцы…</button>
+    <button class="small" id="bClrF" title="Сбросить фильтры столбцов и поиск">Сбросить фильтры</button>
+    <span class="grow"></span><span class="muted" id="cnt"></span>
+  </div>
+  <main id="main">
+    <div class="gridwrap" id="gw" tabindex="0"><div class="empty" id="empty"></div></div>
+    <div class="split" id="split"></div>
+    <aside id="side">
+      <div class="tabs" id="tabs"><button data-t="comp" class="on">Запись</button><button data-t="m3">3D</button><button data-t="mass" title="Массовая правка">Массово</button><button data-t="tpl" title="Общие пользовательские поля по умолчанию">Поля по умолч.</button><button data-t="lib">Библиотека</button><button data-t="chk">Проверка</button></div>
+      <div class="pane on" id="p-comp"><p class="muted">Выберите строку в таблице.</p></div>
+      <div class="pane" id="p-m3"></div><div class="pane" id="p-mass"></div><div class="pane" id="p-tpl"></div><div class="pane" id="p-lib"></div><div class="pane" id="p-chk"></div>
+    </aside>
+  </main>
+</div>
+<div class="view" id="v-x">
+  <div class="left" id="xLeft"></div>
+  <div class="right"><div class="tb" id="xTb"></div><div id="xBody"><div class="empty"><div class="drop"><p><b>Кросс-проверка</b> сверяет 3D-модели STEP по путям из баз, корпуса .libxml, компоненты .elixml и загруженные схемы и платы.</p><p>Подключите папки, добавьте проекты слева и нажмите «Проверить».</p></div></div></div></div>
+</div>
+<div class="view" id="v-3d">
+  <div class="cvw"><canvas id="cv3d"></canvas>
+    <div class="cvbar"><button class="small" data-vw="iso">Изометрия</button><button class="small" data-vw="top">Сверху</button><button class="small" data-vw="bottom">Снизу</button><button class="small" data-vw="front">Спереди</button><button class="small" data-vw="right">Справа</button><button class="small" data-vw="left">Слева</button><button class="small" data-vw="fit">Вписать</button><label class="small"><input type="checkbox" id="c3pads" checked> площадки</label><label class="small"><input type="checkbox" id="c3model" checked> модель</label><button class="small" id="b3png" title="Сохранить снимок PNG">PNG</button></div>
+    <div class="cvinfo" id="cvinfo">Выберите запись с 3D-моделью или файл STEP</div></div>
+  <div class="split" id="split3"></div>
+  <div class="side3" id="side3"></div>
+</div>
+<footer><span id="stFile">Библиотека не загружена</span><span id="stSel"></span><span id="stChg"></span><span class="grow"></span><span>Ячейки: <span class="kbd">Enter</span>/<span class="kbd">F2</span> правка, <span class="kbd">Ctrl+C/V</span> обмен с Excel, <span class="kbd">Ctrl+D</span> заполнить вниз, <span class="kbd">Del</span> очистить</span></footer>
+</div>
+<script type="text/plain" id="occt-js">/*__OCCTJS__*/</script>
+<script type="text/plain" id="occt-wasm">/*__OCCTWASM__*/</script>
+<script>
+/*__CORE__*/
+</script>
+<script>
+/*__APP__*/
+</script>
+</body>
+</html>
